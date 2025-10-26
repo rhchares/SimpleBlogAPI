@@ -1,0 +1,8 @@
+#spring:
+#  output:
+#    ansi:
+#      enabled: always
+#  hibernate:
+#    jpa:
+#      ddl-auto: create-drop
+#      show-sql: true
