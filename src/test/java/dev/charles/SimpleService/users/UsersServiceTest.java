@@ -18,7 +18,6 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.assertArg;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -85,25 +84,12 @@ class UsersServiceTest{
                 mockPage = new PageImpl<>(pageContent, PageRequest.of(targetOffset, pageSize), 50);
 
                 // Given: Repository가 targetOffset으로 호출되면 mockPage를 반환하도록 설정
-                given(usersRepository.findAllBy(
-                        PageRequest.of(targetOffset, pageSize),
-                        UserDto.class
+                given(usersRepository.findAllByOrderByCreatedAtDesc(
+                        PageRequest.of(targetOffset, pageSize)
                 )).willReturn(mockPage);
 
                 Page<UserDto> resultPage = usersService.getUsers(targetOffset);
 
-                // Then 1: Repository가 올바른 Pageable 객체로 호출되었는지 검증
-                verify(usersRepository).findAllBy(
-                        // Pageable 객체의 내부 상태(PageNumber, PageSize) 검증
-                        assertArg(p -> {
-                            assertThat(p.getPageNumber()).as("Page Number").isEqualTo(targetOffset);
-                            assertThat(p.getPageSize()).as("Page Size").isEqualTo(pageSize);
-                        }),
-                        // DTO Class 타입 검증
-                        assertArg(type -> assertThat(type).isEqualTo(UserDto.class))
-                );
-
-                // Then 2: 서비스가 Repository의 반환 값을 그대로 전달했는지 검증
                 assertThat(resultPage).as("Returned Page").isSameAs(mockPage);
                 assertThat(resultPage.getTotalElements()).as("Total Elements").isEqualTo(50);
                 assertThat(resultPage.getNumberOfElements()).as("Number of Elements").isEqualTo(2);
