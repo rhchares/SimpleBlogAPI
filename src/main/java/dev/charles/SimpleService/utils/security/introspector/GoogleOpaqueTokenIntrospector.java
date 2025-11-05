@@ -1,4 +1,4 @@
-package dev.charles.SimpleService.security.introspector;
+package dev.charles.SimpleService.utils.security.introspector;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
