@@ -1,15 +1,22 @@
 package dev.charles.SimpleService.users;
 
-import dev.charles.SimpleService.CustomPageResponse;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.core.OAuth2AuthenticatedPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 
 @RestController
 @RequestMapping(path = "/api/users", produces = "application/json")
+@Validated
 @RequiredArgsConstructor
 public class UsersController {
     final private UsersService usersService;
@@ -17,11 +24,17 @@ public class UsersController {
     /**
      * GET /api/users/{email}
      * 사용자의 정보 반환
-     * @param email 조회할 사용자의 email
      * @return 사용자 데이터 (UserDto)
      */
     @GetMapping
-    ResponseEntity<UserDto> getUser(@Validated @RequestParam("email") String email ){
+    ResponseEntity<UserDto> getUser(
+            @RequestParam
+            @Email(
+                    regexp = "^[a-zA-Z][a-zA-Z0-9]{4,}@[a-zA-Z]+\\.[a-z]{2,}$",
+                    message = "올바른 이메일을 입력하세요."
+            )
+            @NotBlank(message = "이메일은 필수입니다.")
+            String email){
         UserDto userDto =  usersService.getUserByEmail(email);
         return new ResponseEntity<>(userDto,HttpStatus.OK);
     }
@@ -33,8 +46,13 @@ public class UsersController {
      */
 
     @GetMapping("/paged")
-    ResponseEntity<CustomPageResponse<UserDto>> getUsers(@RequestParam(defaultValue = "0") final Integer offset){
-        CustomPageResponse<UserDto> users = new CustomPageResponse<>(usersService.getUsers(offset));
+    ResponseEntity<PagedModel<UserDto>> getUsers(
+            @RequestParam(value = "keyword")
+            final String keyword,
+            @Min(value = 0, message = "최소 0 이상입니다.")
+            @RequestParam(value = "offset", defaultValue = "0")
+            final int offset){
+        PagedModel<UserDto> users = new PagedModel<>(usersService.getUsers(keyword, offset));
         return new ResponseEntity<>(users,HttpStatus.OK);
     }
 
@@ -54,34 +72,29 @@ public class UsersController {
 
 
     /**
-     * PUT /api/users/{id}
+     * PUT /api/users
      * 특정 ID를 가진 사용자 정보를 수정합니다.
-     * @param email 수정할 사용자의 email
      * @param userDto 수정할 사용자 정보 (username, email)
      * @return 수정된 사용자 정보 (UserDto)
      */
-    @PutMapping("/{id}")
-    public ResponseEntity<UserDto> updateUser(
-            @PathVariable("id") String email,
+    @PutMapping
+    public ResponseEntity<?> updateUser(
+            @AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal,
             @Validated @RequestBody UserDto userDto) {
 
-        // Service 계층의 수정 메서드 호출 (id를 함께 전달)
-        UserDto updatedUser = usersService.update(email, userDto);
-
-        // HTTP 200 OK와 함께 수정된 사용자 정보를 반환
-        return ResponseEntity.ok(updatedUser);
+        usersService.update(principal.getAttribute("email"), userDto);
+        return new ResponseEntity<>(null, HttpStatus.NO_CONTENT);
     }
 
     /**
-     * DELETE /api/users/{id}
+     * DELETE /api/users
      * 특정 ID를 가진 사용자 계정을 삭제합니다.
-     * @param email 삭제할 사용자의 email
      * @return 응답 본문 없이 HTTP 204 No Content 반환
      */
-    @DeleteMapping("/{email}")
-    public ResponseEntity<Void> deleteUser(@PathVariable("email") String email) {
-        usersService.delete(email);
-        return ResponseEntity.noContent().build();
+    @DeleteMapping
+    public ResponseEntity<Void> deleteUser(@AuthenticationPrincipal OAuth2AuthenticatedPrincipal principal) {
+        usersService.delete(principal.getAttribute("email"));
+        return new ResponseEntity<>(null, HttpStatus.NO_CONTENT);
     }
 
 
