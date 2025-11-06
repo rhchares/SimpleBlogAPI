@@ -1,61 +1,60 @@
 package dev.charles.SimpleService.users;
 
 import dev.charles.SimpleService.errors.exception.DuplicateResourceException;
-import dev.charles.SimpleService.errors.exception.NotFoundResourceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class UsersService {
-    final private UsersRepository usersRepository;
+    final private UsersQueryRepository usersQueryRepository;
 
     UserDto getUserByEmail (String email){
-        return usersRepository.findByEmail(email, UserDto.class).orElseThrow(
-                () -> new NotFoundResourceException("Not found user by email")
-        );
+        return usersQueryRepository.findByEmailDto(email);
     }
-    Page<UserDto> getUsers(final Integer offset){
+
+    Page<UserDto> getUsers(final String keyword, final Integer offset, final Long total){
         int pageSize = 10;
         Pageable pageable = PageRequest.of(offset,pageSize);
-        return usersRepository.findAllByOrderByCreatedAtDesc(pageable);
+        List<UserDto> usersList= usersQueryRepository.paginationUsers(keyword, pageable);
+        Long totalCount = total != null ? total: usersQueryRepository.totalPagination(keyword);
+        return new PageImpl<>(usersList, pageable, totalCount);
 
     }
 
     @Modifying
     @Transactional
+    @PreAuthorize("principal.claims['email'] == #userDto.email")
     void create(final UserDto userDto){
-        if(usersRepository.findByEmail(userDto.email())
-                .isPresent()){
+        if(usersQueryRepository.checkByEmail(userDto.getEmail())){
             throw new DuplicateResourceException("Already user existed by email");
         }
-        Users user = Users.builder()
-                .username(userDto.username())
-                .email(userDto.email()).build();
-        usersRepository.save(user);
+        usersQueryRepository.save(userDto);
     }
 
+    @Modifying
+    @Transactional
     void delete(final String email){
-        Users user = usersRepository.findByEmail(email).orElseThrow(
-                () -> new NotFoundResourceException("Not found user by email")
-        );
-        usersRepository.delete(user);
+        usersQueryRepository.delete(email);
     }
 
-    UserDto update(final String email, final UserDto userDto){
-        Users user = usersRepository.findByEmail(email).orElseThrow(
-                () -> new NotFoundResourceException("Not found user by email")
-        );
-        user.update(userDto);
-        usersRepository.save(user);
-
-        return userDto;
+    @Modifying
+    @Transactional
+    void update(final String email, final UserDto userDto){
+        if(usersQueryRepository.checkByEmail(email)){
+            throw new DuplicateResourceException("Already user existed by email");
+        }
+        usersQueryRepository.update(userDto);
     }
 
 }

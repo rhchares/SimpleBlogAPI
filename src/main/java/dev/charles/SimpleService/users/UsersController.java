@@ -47,12 +47,14 @@ public class UsersController {
 
     @GetMapping("/paged")
     ResponseEntity<PagedModel<UserDto>> getUsers(
-            @RequestParam(value = "keyword")
+            @RequestParam(value = "keyword", required = false, defaultValue = "")
             final String keyword,
             @Min(value = 0, message = "최소 0 이상입니다.")
             @RequestParam(value = "offset", defaultValue = "0")
-            final int offset){
-        PagedModel<UserDto> users = new PagedModel<>(usersService.getUsers(keyword, offset));
+            final Integer offset,
+            @RequestParam(required = false)
+            final Long total){
+        PagedModel<UserDto> users = new PagedModel<>(usersService.getUsers(keyword, offset, total));
         return new ResponseEntity<>(users,HttpStatus.OK);
     }
 

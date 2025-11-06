@@ -39,8 +39,8 @@ public class Users{
     }
 
     public void update(UserDto userDto){
-        this.username = userDto.username();
-        this.email = userDto.email();
+        this.username = userDto.getUsername();
+        this.email = userDto.getEmail();
     }
 
     @Override
