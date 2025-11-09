@@ -8,7 +8,8 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
-import static dev.charles.SimpleService.users.QUsers.users;
+import static dev.charles.SimpleService.users.domain.QUsers.users;
+
 
 @RequiredArgsConstructor
 public class CustomizedUserRepositoryImpl implements CustomizedUserRepository{
