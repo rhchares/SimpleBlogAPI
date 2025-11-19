@@ -1,4 +1,4 @@
-🌟 [SimpeService] - TDD-Based Simple User REST API
+🌟 [SimpleBlogAPI] - TDD-Based Simple User REST API
 
 🎯 Project Overview
 
