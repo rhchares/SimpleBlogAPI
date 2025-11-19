@@ -4,10 +4,8 @@ import dev.charles.SimpleService.comments.domain.Comments;
 import dev.charles.SimpleService.comments.dto.CommentsRequestDto;
 import dev.charles.SimpleService.comments.dto.CommentsResponseDto;
 import dev.charles.SimpleService.comments.repository.CommentsRepository;
-import dev.charles.SimpleService.errors.exception.AuthorizationException;
 import dev.charles.SimpleService.errors.exception.NotFoundResourceException;
 import dev.charles.SimpleService.posts.domain.Posts;
-import dev.charles.SimpleService.posts.dto.PostDto;
 import dev.charles.SimpleService.posts.repository.PostsRepository;
 import dev.charles.SimpleService.users.domain.Users;
 import dev.charles.SimpleService.users.repository.UsersRepository;
@@ -16,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -80,7 +79,7 @@ public class CommentsService {
 
     private void hasAuthorized(final Users user, final String email){
         if(!user.getEmail().equals(email)) {
-            throw new AuthorizationException("You're not writer on this comment.");
+            throw new AuthorizationDeniedException("You're not writer on this comment.");
         }
     }
 

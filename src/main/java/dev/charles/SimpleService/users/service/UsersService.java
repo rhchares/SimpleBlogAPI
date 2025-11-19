@@ -37,9 +37,7 @@ public class UsersService {
     @Transactional
     @PreAuthorize("principal.claims['email'] == #userDto.email")
     public void create(final UserDto userDto){
-        if(isPresent(userDto.getEmail())){
-            throw new DuplicateResourceException("Already user existed by email");
-        }
+        isDuplicated(userDto.getEmail());
         Users user = Users.of(userDto);
         usersRepository.save(user);
     }
@@ -55,14 +53,14 @@ public class UsersService {
     public void update(final String email, final UserDto userDto){
         Users user = usersRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundResourceException("Not found user by email"));
-        if(isPresent(userDto.getEmail())){
-            throw new DuplicateResourceException("Already user existed by email");
-        }
+        isDuplicated(userDto.getEmail());
         user.update(userDto);
     }
 
-    private boolean isPresent(String email){
-        return usersRepository.findByEmail(email).isPresent();
+    private void isDuplicated(String email){
+        if(usersRepository.findByEmail(email).isPresent()){
+            throw new DuplicateResourceException("Already user existed by email");
+        }
     }
 
 }
