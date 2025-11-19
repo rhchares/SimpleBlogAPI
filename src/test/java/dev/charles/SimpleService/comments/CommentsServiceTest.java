@@ -10,6 +10,7 @@ import dev.charles.SimpleService.posts.repository.PostsRepository;
 import dev.charles.SimpleService.users.domain.Users;
 import dev.charles.SimpleService.users.dto.UserDto;
 import dev.charles.SimpleService.users.repository.UsersRepository;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -18,9 +19,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
@@ -109,6 +112,16 @@ class CommentsServiceTest {
                 commentsService.updateComment(commentId, newText, email);
                 verify(commentsRepository, times(1)).findById(commentId);
             }
+
+            @Test
+            @DisplayName("Then you can't update a unauthorized comment with a new text and ")
+            void updateCommentWhenNotAuthorized(){
+                Throwable throwable = catchThrowable(()->
+                    commentsService.updateComment(commentId, newText, "dd"));
+                assertThat(throwable).isInstanceOf(AuthorizationDeniedException.class);
+                verify(commentsRepository, times(1)).findById(commentId);
+
+            }
         }
 
         @Nested
@@ -174,5 +187,7 @@ class CommentsServiceTest {
             }
         }
     }
+
+
 
 }

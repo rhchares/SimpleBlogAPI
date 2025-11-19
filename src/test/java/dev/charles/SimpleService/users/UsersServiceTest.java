@@ -1,6 +1,8 @@
 package dev.charles.SimpleService.users;
 
 
+import dev.charles.SimpleService.errors.exception.DuplicateResourceException;
+import dev.charles.SimpleService.errors.exception.NotFoundResourceException;
 import dev.charles.SimpleService.users.domain.Users;
 import dev.charles.SimpleService.users.dto.UserDto;
 import dev.charles.SimpleService.users.repository.UsersRepository;
@@ -20,7 +22,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -47,6 +51,17 @@ class UsersServiceTest{
         @Nested
         @DisplayName("When use service")
         class GetMikeEntityByEmailTest{
+            @Test
+            @DisplayName("Then can't find user entity by email ")
+            public void UserNotGetTest() {
+                //when
+                Throwable throwable = catchThrowable(()-> usersService.getUserByEmail("dsd"));
+                // then
+                assertThat(throwable).isInstanceOf(NotFoundResourceException.class);
+                verify(usersRepository, times(1)).findByEmail(any(), eq(UserDto.class));
+
+            }
+
             @Test
             @DisplayName("Then  find mike of a user entity by email and repository is called ")
             public void UserGetTest() {
@@ -100,6 +115,18 @@ class UsersServiceTest{
             }
 
             @Test
+            @DisplayName("Then can't save because of duplication issue")
+            void UserNotCreateTest() {
+                // given
+                given(usersRepository.findByEmail(mikeDto.getEmail())).willReturn(Optional.of(mike));
+                // when
+                Throwable throwable = catchThrowable(()->usersService.create(mikeDto));
+                assertThat(throwable).isInstanceOf(DuplicateResourceException.class);
+                // then
+                verify(usersRepository, times(0)).save(any());
+            }
+
+            @Test
             @DisplayName("Then find the user entity by email and then the entity is deleted")
             void UserDeleteTest() {
                 //given
@@ -123,6 +150,21 @@ class UsersServiceTest{
                 assertThat(mike.getUsername()).isEqualTo(newDto.getUsername());
                 verify(usersRepository, times(2)).findByEmail(any());
             }
+
+            @Test
+            @DisplayName("Then can't update because of duplicated issue")
+            void UserNotUpdate(){
+                //given
+                UserDto newDto = new UserDto("mike2", "mike2@gmail.com");
+                given(usersRepository.findByEmail("mike@gmail.com")).willReturn(Optional.ofNullable(mike));
+                // when
+                usersService.update("mike@gmail.com", newDto);
+                // then
+                assertThat(mike.getEmail()).isEqualTo(newDto.getEmail());
+                assertThat(mike.getUsername()).isEqualTo(newDto.getUsername());
+                verify(usersRepository, times(2)).findByEmail(any());
+            }
+
 
 
 

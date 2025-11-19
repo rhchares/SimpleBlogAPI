@@ -12,7 +12,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -65,6 +64,7 @@ public class UsersRepositoryTest extends AbstractIntegrationTest {
         // When
         List<UserDto> userPage = usersRepository.findAllByKeyword("", pageable);
         // Then
+        System.out.println(userPage);
         assertThat(userPage.size()).isEqualTo(2);
         assertThat(userPage.get(0)).extracting("email","username")
                 .contains("test2@email.com","user2");
@@ -77,6 +77,14 @@ public class UsersRepositoryTest extends AbstractIntegrationTest {
         usersRepository.delete(seleted);
 
         assertThat(usersRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("Count user by keyword")
+    void countByKeyword(){
+        Long result = usersRepository.countByKeyword("u");
+
+        assertThat(result).isEqualTo(2);
     }
 
 }
