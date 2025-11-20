@@ -19,7 +19,7 @@ Ensure you have the following software installed on your system:
 1. Clone the Repository\
     Clone the source code from your Git repository:
     ```Bash
-    git clone https://github.com/rhcharles/SimpleBlogAPI.git
+    git clone https://github.com/rhcharles0/SimpleBlogAPI.git
     cd SimpleBlogAPI
     ```
 
