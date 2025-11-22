@@ -11,7 +11,6 @@ import dev.charles.SimpleService.posts.repository.PostsRepository;
 import dev.charles.SimpleService.users.domain.Users;
 import dev.charles.SimpleService.users.dto.UserDto;
 import dev.charles.SimpleService.users.repository.UsersRepository;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -20,7 +19,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.authorization.AuthorizationDeniedException;
 
 import java.util.Optional;
 
@@ -61,10 +59,9 @@ class CommentsServiceTest {
             @Test
             @DisplayName("Then you can retrieve a pagination of parent comments ranging from 0 to 10, sorted by creation date in descending order")
             void getCommentsByPostId(){
-                commentsService.getCommentsByPostId(postId, pageNumber, null);
+                commentsService.getCommentsByPostId(postId, pageNumber);
                 verify(commentsRepository, times(1)).findAllParentsByPostId(eq(postId), argThat(pageable ->
                         pageable.getPageNumber() == 0 && pageable.getPageSize() == 10));
-                verify(commentsRepository, times(1)).countParentsByPostId(postId);
             }
         }
 
@@ -74,10 +71,9 @@ class CommentsServiceTest {
             @Test
             @DisplayName("Then you can retrieve a pagination of child comments ranging from 0 to 10, sorted by creation date in descending order")
             void getRepliesByParentId(){
-                commentsService.getRepliesByParentId(parentId, pageNumber, null);
+                commentsService.getRepliesByParentId(parentId, pageNumber);
                 verify(commentsRepository, times(1)).findAllChildrenByParentId(eq(parentId), argThat(pageable ->
                         pageable.getPageNumber() == 0 && pageable.getPageSize() == 10));
-                verify(commentsRepository, times(1)).countChildrenByParentId(parentId);
             }
         }
     }

@@ -12,15 +12,10 @@ import dev.charles.SimpleService.users.domain.Users;
 import dev.charles.SimpleService.users.repository.UsersRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -46,20 +41,18 @@ public class CommentsService {
         commentsRepository.save(newComment);
     }
 
-    public Page<CommentsResponseDto> getCommentsByPostId(final Long postId, final Integer pageNumber, final Long total) {
+    public Page<CommentsResponseDto> getCommentsByPostId(final Long postId, final Integer pageNumber) {
         int pageSize = 10;
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
-        List<CommentsResponseDto> commentsList =  commentsRepository.findAllParentsByPostId(postId,pageable);
-        long totalCount = Optional.ofNullable(total).orElseGet(()->commentsRepository.countParentsByPostId(postId));
-        return new PageImpl<>(commentsList, pageable, totalCount);
+        return commentsRepository.findAllParentsByPostId(postId, pageable);
+
     }
 
-    public Page<CommentsResponseDto> getRepliesByParentId(Long parentId, final Integer pageNumber, final Long total) {
+    public Page<CommentsResponseDto> getRepliesByParentId(Long parentId, final Integer pageNumber) {
         int pageSize = 10;
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
-        List<CommentsResponseDto> commentsList =  commentsRepository.findAllChildrenByParentId(parentId,pageable);
-        long totalCount = Optional.ofNullable(total).orElseGet(()->commentsRepository.countChildrenByParentId(parentId));
-        return new PageImpl<>(commentsList, pageable, totalCount);
+        return commentsRepository.findAllChildrenByParentId(parentId, pageable);
+
     }
 
     @Transactional

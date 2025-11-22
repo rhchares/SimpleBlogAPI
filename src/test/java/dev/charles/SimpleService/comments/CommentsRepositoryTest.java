@@ -14,11 +14,9 @@ import dev.charles.SimpleService.users.repository.UsersRepository;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.Nested;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
@@ -38,6 +36,7 @@ public class CommentsRepositoryTest extends AbstractIntegrationTest {
         private Users curUser;
         private Comments parentComment;
         private Pageable pageable;
+
         @BeforeEach
         void setup(){
             UserDto userDto = UserDto.builder()
@@ -62,7 +61,7 @@ public class CommentsRepositoryTest extends AbstractIntegrationTest {
 
             for (int i = 3; i >= 1; i--) {
                 CommentsRequestDto temp = CommentsRequestDto.builder().content("replies"+i)
-                        .parentId(1L).build();
+                        .parentId(curPost.getId()).build();
                 Comments comment = Comments.builder()
                         .parentComment(parentComment)
                         .post(curPost)
@@ -72,6 +71,14 @@ public class CommentsRepositoryTest extends AbstractIntegrationTest {
             }
 
             pageable = PageRequest.of(0,10);
+        }
+
+        @AfterEach
+        void tearDown(){
+            commentsRepository.deleteAll();
+            usersRepository.deleteAll();
+            postsRepository.deleteAll();
+
         }
 
         @Nested
@@ -85,19 +92,15 @@ public class CommentsRepositoryTest extends AbstractIntegrationTest {
             @Test
             @DisplayName("Then you can get only parent comments")
             void findAllParentsByPostId() {
-                List<CommentsResponseDto> result =  commentsRepository.findAllParentsByPostId(postId, pageable);
+                Page<CommentsResponseDto> result =  commentsRepository.findAllParentsByPostId(postId, pageable);
                 assertSoftly((softly)-> {
-                    softly.assertThat(result.size()).isEqualTo(5);
-                    softly.assertThat(result.get(0).getContent()).isEqualTo("comment1");
+                    softly.assertThat(result.getNumber()).isEqualTo(0);
+                    softly.assertThat(result.getTotalElements()).isEqualTo(5);
+                    softly.assertThat(result).extracting(CommentsResponseDto::getContent)
+                                    .allMatch(content -> content.contains("comment"));
                 });
             }
 
-            @Test
-            @DisplayName("Then you can get count of parent comments with postId")
-            void countParentsByPostId(){
-                Long result = commentsRepository.countParentsByPostId(postId);
-                assertThat(result).isEqualTo(5);
-            }
         }
 
         @Nested
@@ -111,19 +114,14 @@ public class CommentsRepositoryTest extends AbstractIntegrationTest {
             @Test
             @DisplayName("Then you can have replies with parentId")
             void findAllParentsByPostId() {
-                List<CommentsResponseDto> result =  commentsRepository.findAllChildrenByParentId(parentId, pageable);
+                Page<CommentsResponseDto> result =  commentsRepository.findAllChildrenByParentId(parentId, pageable);
                 assertSoftly((softly)-> {
-                    softly.assertThat(result.size()).isEqualTo(3);
+                    softly.assertThat(result.getNumber()).isEqualTo(0);
+                    softly.assertThat(result.getTotalElements()).isEqualTo(3);
                     softly.assertThat(result)
                             .extracting(CommentsResponseDto::getContent)
                             .allMatch(content -> content.contains("reply"));
                 });
-            }
-            @Test
-            @DisplayName("Then you can get count of child comments with parentId")
-            void countParentsByPostId(){
-                Long result = commentsRepository.countChildrenByParentId(parentId);
-                assertThat(result).isEqualTo(3);
             }
         }
 

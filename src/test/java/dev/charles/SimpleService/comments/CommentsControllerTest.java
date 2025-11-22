@@ -132,7 +132,7 @@ class CommentsControllerTest extends AbstractIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON))
                         .andExpect(status().isOk());
 
-                verify(commentsService, times(1)).getCommentsByPostId(postId, pageNumber, null);
+                verify(commentsService, times(1)).getCommentsByPostId(postId, pageNumber);
             }
 
         }
@@ -151,7 +151,7 @@ class CommentsControllerTest extends AbstractIntegrationTest {
                                 .contentType(MediaType.APPLICATION_JSON))
                         .andExpect(status().isOk());
 
-                verify(commentsService, times(1)).getRepliesByParentId(parentId, pageNumber, null);
+                verify(commentsService, times(1)).getRepliesByParentId(parentId, pageNumber);
             }
 
         }

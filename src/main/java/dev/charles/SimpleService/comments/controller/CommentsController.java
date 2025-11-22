@@ -3,6 +3,7 @@ package dev.charles.SimpleService.comments.controller;
 import dev.charles.SimpleService.comments.dto.CommentsRequestDto;
 import dev.charles.SimpleService.comments.dto.CommentsResponseDto;
 import dev.charles.SimpleService.comments.service.CommentsService;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -51,20 +52,18 @@ public class CommentsController {
     @GetMapping("/paged/post")
     @PatchMapping
     public ResponseEntity<?> getPostComments(
-            @RequestParam(value = "postId") Long postId,
-            @RequestParam(value = "pageNumber") Integer pageNumber,
-            @RequestParam(value = "total", required = false) Long total) {
-        Page<CommentsResponseDto> result =commentsService.getCommentsByPostId(postId,pageNumber,total);
+            @NotNull @RequestParam(value = "postId") Long postId,
+            @RequestParam(value = "pageNumber") Integer pageNumber) {
+        Page<CommentsResponseDto> result =commentsService.getCommentsByPostId(postId,pageNumber);
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
     @GetMapping("/paged/reply")
     @PatchMapping
     public ResponseEntity<?> getReplies(
-            @RequestParam(value = "parentId") Long parentId,
-            @RequestParam(value = "pageNumber") Integer pageNumber,
-            @RequestParam(value = "total", required = false) Long total) {
-        Page<CommentsResponseDto> result = commentsService.getRepliesByParentId(parentId,pageNumber,total);
+            @NotNull @RequestParam(value = "parentId") Long parentId,
+            @RequestParam(value = "pageNumber") Integer pageNumber) {
+        Page<CommentsResponseDto> result = commentsService.getRepliesByParentId(parentId,pageNumber);
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
