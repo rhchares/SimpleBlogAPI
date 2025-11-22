@@ -14,6 +14,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,33 +73,35 @@ public class PostsServiceTest {
     void getAllPostsByKeyword() {
         //given
         String keyword = "hi";
+        Pageable pageable = PageRequest.of(0,10);
         List<PostDto> dtoList = new ArrayList<>();
-
+        Page<PostDto> givenResult= new PageImpl<>(dtoList, pageable, 5);
         for (int i = 0; i < 5; i++) {
             PostDto temp = PostDto.builder().title("hi"+i)
                             .content("content")
                                     .build();
             dtoList.add(temp);
         }
-        given(postsRepository.countByKeyword(any())).willReturn(5L);
-        given(postsRepository.findAllByKeyword(any(), any())).willReturn(dtoList);
+        given(postsRepository.findAllByKeyword( true, keyword,  pageable)).willReturn(givenResult);
 
         //when
-        Page<PostDto> result = postsService.getAllPosts(keyword, 0, null);
+        Page<PostDto> result = postsService.getAllPosts(true, keyword, 0);
 
         //then
-        verify(postsRepository, times(1)).countByKeyword(any());
-        verify(postsRepository, times(1)).findAllByKeyword(any(), any());
 
-        dtoList.forEach(dto -> {
-            assertThat(result.get()).contains(dto);
-        });
+        verify(postsRepository, times(1)).findAllByKeyword(true, keyword, pageable);
+
+        assertThat(result).isEqualTo(givenResult);
     }
 
     @Test
     void getAllPostsByKeywordAndUser() {
         //given
         String keyword = "hi";
+        Integer pageSize = 10;
+        Pageable pageable = PageRequest.of(0,pageSize);
+        Long total = 5L;
+        String email = "sample@email.com";
         List<PostDto> dtoList = new ArrayList<>();
 
         for (int i = 0; i < 5; i++) {
@@ -105,19 +110,19 @@ public class PostsServiceTest {
                     .build();
             dtoList.add(temp);
         }
-        given(postsRepository.countByKeywordAndEmail(any(), any()) ).willReturn(5L);
-        given(postsRepository.findAllByKeywordAndEmail(any(), any(), any()) ).willReturn(dtoList);
+
+        Page<PostDto> givenResult = new PageImpl<>(dtoList, pageable, total);
+        given(postsRepository.findAllByKeywordAndEmail(false, keyword, email, pageable) ).willReturn(givenResult);
 
         //when
-        Page<PostDto> result = postsService.getAllPostsbyUser("dd", keyword, 5,null);
+        Page<PostDto> result = postsService.getAllPostsByUser(false, email, keyword, 0);
 
         //then
-        verify(postsRepository, times(1)).countByKeywordAndEmail(any(), any() );
-        verify(postsRepository, times(1)).findAllByKeywordAndEmail(any(),any(), any()) ;
+        verify(postsRepository, times(1)).findAllByKeywordAndEmail(false, keyword, email, pageable) ;
 
-        dtoList.forEach(dto -> {
-            assertThat(result.get()).contains(dto);
-        });
+        result.forEach(
+                t -> assertThat(t).isIn(dtoList)
+        );
     }
 
     @Test

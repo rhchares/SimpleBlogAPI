@@ -9,14 +9,10 @@ import dev.charles.SimpleService.users.domain.Users;
 import dev.charles.SimpleService.users.repository.UsersRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -34,20 +30,17 @@ public class PostsService {
         postsRepository.save(post);
     }
 
-    public Page<PostDto> getAllPostsbyUser(final String email, final String keyword , final Integer pageNumber, final Long total){
+    public Page<PostDto> getAllPostsByUser(Boolean isSearchMode, final String email, final String keyword , final Integer pageNumber){
         int pageSize = 10;
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
-        List<PostDto> postDtoList =  postsRepository.findAllByKeywordAndEmail("keyword", email, pageable);
-        long totalCount = Optional.ofNullable(total).orElseGet(()->postsRepository.countByKeywordAndEmail(keyword, email));
-        return new PageImpl<>(postDtoList, pageable, totalCount);
+        return postsRepository.findAllByKeywordAndEmail(isSearchMode, keyword, email, pageable);
+
     }
 
-    public Page<PostDto> getAllPosts(final String keyword, final Integer pageNumber, final Long total){
+    public Page<PostDto> getAllPosts(Boolean isSearchMode, final String keyword, final Integer pageNumber){
         int pageSize = 10;
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
-        List<PostDto> postDtoList =  postsRepository.findAllByKeyword(keyword, pageable);
-        long totalCount = Optional.ofNullable(total).orElseGet(()->postsRepository.countByKeyword(keyword));
-        return new PageImpl<>(postDtoList, pageable, totalCount);
+        return postsRepository.findAllByKeyword(isSearchMode, keyword, pageable );
     }
 
     public PostDto getPostById(Long postId) {

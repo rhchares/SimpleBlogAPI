@@ -16,7 +16,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -79,9 +81,7 @@ class UsersServiceTest{
             @Test
             @DisplayName("Then the repository is called with correct Pageable and returns the Page")
             void getUsers_ShouldCallRepositoryWithCorrectPageable() {
-                Page<UserDto> mockPage;
-                int targetOffset = 0; // 3번째 페이지 (인덱스 2)
-                final int pageSize = 10;
+                Pageable pageable = PageRequest.of(0,10);
                 // When: 3번째 페이지 (offset=2) 요청
                 List<UserDto> pageContent = List.of(
                         new UserDto("user1", "u1@mail.com"),
@@ -95,15 +95,19 @@ class UsersServiceTest{
                         new UserDto("user9", "u9@mail.com"),
                         new UserDto("user10", "u10@mail.com")
                 );
+                Long total = (long) pageContent.size();
+
+                Page<UserDto> givenResult = new PageImpl<>(pageContent, pageable, total);
                 // Given: Repository가 targetOffset으로 호출되면 mockPage를 반환하도록 설정
-                given(usersRepository.findAllByKeyword("user",
-                        PageRequest.of(targetOffset, pageSize)
-                )).willReturn(pageContent);
+                given(usersRepository.findAllByKeyword( false,
+                        "user",
+                        pageable)).willReturn(givenResult);
 
-                Page<UserDto> resultPage = usersService.getUsers("user", targetOffset, null);
+                Page<UserDto> resultPage = usersService.getUsers(false, "user", pageable.getPageNumber());
 
-                assertThat(resultPage.getTotalElements()).as("Total Elements").isEqualTo(10);
-                assertThat(resultPage.getNumberOfElements()).as("Number of Elements").isEqualTo(10);
+                assertThat(resultPage).isEqualTo(givenResult);
+                verify(usersRepository, times(1)).findAllByKeyword( false,
+                        "user", pageable);
             }
             @Test
             @DisplayName("Then the repository's save method is called with a Users entity")

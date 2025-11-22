@@ -11,9 +11,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Optional;
-
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -26,12 +23,11 @@ public class UsersService {
         );
     }
 
-    public Page<UserDto> getUsers(final String keyword, final Integer pageNumber, final Long total){
+    public Page<UserDto> getUsers(Boolean isSearchMode, final String keyword, final Integer pageNumber){
         int pageSize = 10;
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
-        List<UserDto> userDtoList =  usersRepository.findAllByKeyword(keyword, pageable);
-        long totalCount = Optional.ofNullable(total).orElseGet(()->usersRepository.countByKeyword(keyword));
-        return new PageImpl<>(userDtoList, pageable, totalCount);
+        return usersRepository.findAllByKeyword(isSearchMode, keyword, pageable);
+
     }
 
     @Transactional
