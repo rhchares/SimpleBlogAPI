@@ -1,78 +1,93 @@
 package dev.charles.SimpleService.posts.repository;
 
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.JPQLQuery;
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import dev.charles.SimpleService.posts.domain.Posts;
 import dev.charles.SimpleService.posts.dto.PostDto;
-import dev.charles.SimpleService.users.dto.UserDto;
-import lombok.RequiredArgsConstructor;
+import dev.charles.SimpleService.utils.FixedPageRequest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.support.Querydsl;
+import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
 
-import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 import static dev.charles.SimpleService.posts.domain.QPosts.posts;
 import static dev.charles.SimpleService.users.domain.QUsers.users;
 
 
-@RequiredArgsConstructor
-public class CustomizedPostsRepositoryImpl implements CustomizedPostsRepository{
+public class CustomizedPostsRepositoryImpl extends QuerydslRepositorySupport implements CustomizedPostsRepository {
     private final JPAQueryFactory queryFactory;
+    public CustomizedPostsRepositoryImpl(JPAQueryFactory queryFactory) {
+        super(Posts.class);
+        this.queryFactory = queryFactory;
+    }
 
+    private BooleanExpression likeIgnoreCase(String keyword) {
+        if(isNotBlank(keyword)) return posts.title.likeIgnoreCase("%" + keyword + "%");
+        return null;
+    }
 
-    @Override
-    public List<PostDto> findAllByKeyword(String keyword, Pageable pageable) {
-        return queryFactory
-                .select(Projections.fields(PostDto.class,
-                        posts.title,
-                        posts.content))
-                .from(posts)
-                .where(
-                        posts.title.likeIgnoreCase("%"+keyword + "%")
-                )
-                .orderBy(posts.id.desc())
-                .limit(pageable.getPageSize())
-                .offset((long) pageable.getPageSize() * pageable.getPageNumber())
-                .fetch();
+    private boolean isNotBlank(String keyword) {
+        return Optional.ofNullable(keyword).filter(k ->
+                        !k.isBlank())
+                .isPresent();
     }
 
     @Override
-    public List<PostDto> findAllByKeywordAndEmail(String keyword, String email, Pageable pageable) {
-        return queryFactory
+    public Page<PostDto> findAllByKeyword(boolean isSearchMode, String keyword, Pageable pageable) {
+        JPAQuery<PostDto> query = queryFactory.select(Projections.fields(PostDto.class,
+                                        posts.title,
+                                        posts.content))
+                                .from(posts)
+                                .where(
+                                        likeIgnoreCase(keyword)
+                                )
+                                .orderBy(posts.id.desc());
+        JPQLQuery<PostDto> pagination = querydsl().applyPagination(pageable, query);
+
+        if(isSearchMode) {
+            int fixedPageCount = 10 * pageable.getPageSize();
+            return new PageImpl<>(pagination.fetch(), pageable, fixedPageCount);
+        }
+        Long totalCount = pagination.fetchCount();
+        Pageable pageRequest = new FixedPageRequest(pageable, totalCount);
+        return new PageImpl<>(querydsl().applyPagination(pageRequest, query).fetch(), pageRequest, totalCount);
+    }
+
+    @Override
+    public Page<PostDto> findAllByKeywordAndEmail(boolean isSearchMode, String keyword, String email, Pageable pageable) {
+        JPAQuery<PostDto> query = queryFactory
                 .select(Projections.fields(PostDto.class,
                         posts.title,
                         posts.content))
                 .from(posts)
                 .join(posts.createdBy, users)
                 .where(
-                        posts.title.likeIgnoreCase("%"+keyword + "%"),
+                        likeIgnoreCase(keyword),
                         users.email.eq(email)
                 )
-                .orderBy(posts.id.desc())
-                .limit(pageable.getPageSize())
-                .offset((long) pageable.getPageSize() * pageable.getPageNumber())
-                .fetch();
+                .orderBy(posts.id.desc());
+
+        JPQLQuery<PostDto> pagination = querydsl().applyPagination(pageable, query);
+
+        if(isSearchMode) {
+            int fixedPageCount = 10 * pageable.getPageSize();
+            return new PageImpl<>(pagination.fetch(), pageable, fixedPageCount);
+        }
+        Long totalCount = pagination.fetchCount();
+        Pageable pageRequest = new FixedPageRequest(pageable, totalCount);
+        return new PageImpl<>(querydsl().applyPagination(pageRequest, query).fetch(), pageRequest, totalCount);
+
+    }
+    private Querydsl querydsl() {
+        return Objects.requireNonNull(getQuerydsl());
     }
 
-    @Override
-    public Long countByKeyword(String keyword) {
-        return queryFactory
-                .select(posts.count())
-                .from(posts)
-                .where(
-                        posts.title.likeIgnoreCase("%"+keyword + "%")
-                )
-                .fetchOne();
-    }
 
-    @Override
-    public Long countByKeywordAndEmail(String keyword, String email) {
-        return queryFactory
-                .select(posts.count())
-                .from(posts)
-                .join(posts.createdBy, users)
-                .where(
-                        posts.title.likeIgnoreCase("%"+keyword + "%"),
-                        users.email.eq(email)
-                )
-                .fetchOne();
-    }
 }
