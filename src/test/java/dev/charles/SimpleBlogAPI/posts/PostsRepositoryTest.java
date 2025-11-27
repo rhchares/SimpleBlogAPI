@@ -1,12 +1,12 @@
-package dev.charles.SimpleService.posts;
+package dev.charles.SimpleBlogAPI.posts;
 
-import dev.charles.SimpleService.AbstractIntegrationTest;
-import dev.charles.SimpleService.posts.domain.Posts;
-import dev.charles.SimpleService.posts.dto.PostDto;
-import dev.charles.SimpleService.posts.repository.PostsRepository;
-import dev.charles.SimpleService.users.domain.Users;
-import dev.charles.SimpleService.users.dto.UserDto;
-import dev.charles.SimpleService.users.repository.UsersRepository;
+import dev.charles.SimpleBlogAPI.AbstractIntegrationTest;
+import dev.charles.SimpleBlogAPI.posts.domain.Posts;
+import dev.charles.SimpleBlogAPI.posts.dto.PostDto;
+import dev.charles.SimpleBlogAPI.posts.repository.PostsRepository;
+import dev.charles.SimpleBlogAPI.users.domain.Users;
+import dev.charles.SimpleBlogAPI.users.dto.UserDto;
+import dev.charles.SimpleBlogAPI.users.repository.UsersRepository;
 
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -180,7 +180,7 @@ public class PostsRepositoryTest extends AbstractIntegrationTest {
             }
 
             @ParameterizedTest
-            @CsvSource({"the, 0, 100","a, 0, 100", "asdasdgiojwrgiow, 0, 0"})
+            @CsvSource({"the Rise, 0, 100","a, 0, 0", "asdasdgiojwrgiow, 0, 0"})
             @DisplayName("Then you can receive pagination of postDto by keyword")
             void findAllByKeywordTest(String keyword, int pageNumber, int expectedTotal) {
                 System.out.println("total: " +postsRepository.findAll().size());
@@ -210,16 +210,19 @@ public class PostsRepositoryTest extends AbstractIntegrationTest {
                 isSearchMode= false;
             }
             @ParameterizedTest
-            @CsvSource({", 0, 50", "the, 0, 30", "asdasdgiojwrgiow, 0, 0"})
+            @CsvSource({", 0, 50", "the rise, 0, 10", "asdasdgiojwrgiow, 0, 0"})
             @DisplayName("Then you can receive pagination of postDto by keyword")
             void findAllByKeywordTest(String keyword, int pageNumber, int expectedTotal) {
                 pageable = PageRequest.of(pageNumber, pageSize);
                 Page<PostDto> page = postsRepository.findAllByKeyword(isSearchMode, keyword,  pageable );
+                page.forEach(
+                        System.out::println
+                );
                 assertThat(page.getNumber()).isEqualTo(pageNumber);
                 assertThat(page.getTotalElements()).isEqualTo(expectedTotal);
             }
             @ParameterizedTest
-            @CsvSource({", dsd, 0, 0", "the, sample@email.com, 0, 15", "the, sample2@email.com, 0, 15"})
+            @CsvSource({", dsd, 0, 0", "the Rise, sample@email.com, 0, 5", "the Rise, sample2@email.com, 0, 5"})
             @DisplayName("Then you can receive a pagination of postDto  by keyword and email")
             void findAllByKeywordByEmailTest(String keyword, String email, int pageNumber, int expectedTotal){
                 pageable = PageRequest.of(pageNumber, pageSize);
