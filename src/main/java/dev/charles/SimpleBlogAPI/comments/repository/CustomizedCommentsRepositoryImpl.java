@@ -1,16 +1,12 @@
-package dev.charles.SimpleService.comments.repository;
+package dev.charles.SimpleBlogAPI.comments.repository;
 
-import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.JPQLQuery;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import dev.charles.SimpleService.comments.domain.Comments;
-import dev.charles.SimpleService.comments.dto.CommentsResponseDto;
-import dev.charles.SimpleService.comments.dto.QCommentsResponseDto;
-import dev.charles.SimpleService.posts.domain.Posts;
-import dev.charles.SimpleService.users.dto.QUserDto;
-import dev.charles.SimpleService.users.dto.UserDto;
-import lombok.RequiredArgsConstructor;
+import dev.charles.SimpleBlogAPI.comments.domain.Comments;
+import dev.charles.SimpleBlogAPI.comments.dto.CommentsResponseDto;
+import dev.charles.SimpleBlogAPI.comments.dto.QCommentsResponseDto;
+import dev.charles.SimpleBlogAPI.users.dto.QUserDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -21,8 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import static dev.charles.SimpleService.comments.domain.QComments.comments;
-import static dev.charles.SimpleService.users.domain.QUsers.users;
+import static dev.charles.SimpleBlogAPI.comments.domain.QComments.comments;
+import static dev.charles.SimpleBlogAPI.users.domain.QUsers.users;
 
 
 public class CustomizedCommentsRepositoryImpl extends QuerydslRepositorySupport  implements CustomizedCommentsRepository {
@@ -32,7 +28,6 @@ public class CustomizedCommentsRepositoryImpl extends QuerydslRepositorySupport 
         super(Comments.class);
         this.queryFactory = queryFactory;
     }
-
 
     @Override
     public Page<CommentsResponseDto> findAllParentsByPostId(Long postId, Pageable pageable) {
@@ -52,7 +47,6 @@ public class CustomizedCommentsRepositoryImpl extends QuerydslRepositorySupport 
         if(ids.isEmpty()){
             return new PageImpl<>(new ArrayList<>(), pageable, 0);
         }
-
         JPAQuery<CommentsResponseDto> query = queryFactory
                 .select( new QCommentsResponseDto(comments.content, comments.createdAt, comments.updatedAt,
                                 new QUserDto( comments.createdBy.username,
@@ -61,8 +55,15 @@ public class CustomizedCommentsRepositoryImpl extends QuerydslRepositorySupport 
                 .where(comments.id.in(ids))
                 .orderBy(comments.id.desc());
         List<CommentsResponseDto> contents = query.fetch();
-        Long totalCount = paginationId.fetchCount();
+        Long totalCount = queryFactory
+                .select(comments.id.count())
+                .from(comments)
+                .where( comments.post.id.eq(postId),
+                        comments.parentComment.isNull()
+                )
+                .fetchOne();
         return new PageImpl<>(contents, pageable, totalCount);
+
     }
 
     @Override
@@ -93,7 +94,12 @@ public class CustomizedCommentsRepositoryImpl extends QuerydslRepositorySupport 
                 )
                 .orderBy(comments.createdAt.desc());
         List<CommentsResponseDto> contents = query.fetch();
-        Long totalCount = paginationId.fetchCount();
+        Long totalCount = queryFactory
+                .select(comments.id.count())
+                .from(comments)
+                .where(comments.parentComment.id.eq(parentId))
+                .fetchOne();
+
         return new PageImpl<>(contents, pageable, totalCount);
     }
 
