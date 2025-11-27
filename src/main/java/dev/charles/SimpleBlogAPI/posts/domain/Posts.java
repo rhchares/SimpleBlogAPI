@@ -1,9 +1,9 @@
-package dev.charles.SimpleService.posts.domain;
+package dev.charles.SimpleBlogAPI.posts.domain;
 
-import dev.charles.SimpleService.comments.domain.Comments;
-import dev.charles.SimpleService.posts.dto.PostDto;
-import dev.charles.SimpleService.users.domain.BaseEntity;
-import dev.charles.SimpleService.users.domain.Users;
+import dev.charles.SimpleBlogAPI.comments.domain.Comments;
+import dev.charles.SimpleBlogAPI.posts.dto.PostDto;
+import dev.charles.SimpleBlogAPI.users.domain.BaseEntity;
+import dev.charles.SimpleBlogAPI.users.domain.Users;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,6 +25,7 @@ public class Posts extends BaseEntity {
     private String content;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_id", nullable = false)
     private Users createdBy;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -36,6 +37,9 @@ public class Posts extends BaseEntity {
         this.title = title;
         this.content = content;
     }
+
+    @Column(name = "post_tsv", columnDefinition = "tsvector",insertable = false)
+    private String post_tsv;
 
     public static Posts of(PostDto postDto){
         return new Posts(postDto.getTitle(), postDto.getContent());
